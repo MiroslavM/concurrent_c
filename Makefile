@@ -14,8 +14,8 @@ clean:
 run: FileServer.c includes/commonlib.a includes/commonlib.h
 	gcc $(CFLAGS) FileServer.c -o run $(SEMFLAGS)
 
-test: test/client.c includes/commonlib.a includes/commonlib.h
-	gcc $(CFLAGS) test/client.c -o test $(SEMFLAGS)
+test: client/client.c includes/commonlib.a includes/commonlib.h
+	gcc $(CFLAGS) client/client.c -o test $(SEMFLAGS)
 
 includes/config_client.o: includes/config_client.h
 	gcc -c $(CFLAGS) includes/config_client.h -o includes/config_client.o $(SEMFLAGS)
