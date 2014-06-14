@@ -2,11 +2,26 @@
 
 struct FileInfo fileInfoRoot;    //Pointer auf erste FileInfo Struktur
 struct FileInfo fileInfoCurrent; //aktuelles Struct
+
 FILE *fp = NULL;
+char line[256];
+int pid;
 
 int main(int argc, char* argv[]){
   //Benötigte Variablen
-  //char fileName[256];
+
+  
+  //Überprüfen ob der Prozess bereits läuft
+  if(argc > 1){
+    switch (strncmp(argv[1], "stop", 4)){
+      case 0: if(stop() == 1){
+      
+      printf("Bye Bye \n");
+      exit(0);
+    }
+      break;    
+    }
+  }
   
   //Starte Daemon
   pid_t process_id = 0;
@@ -54,8 +69,23 @@ int savePid(int pid){
     printf("couldn't open file, following error occured: %s\n", strerror(errno));
     exit(1);
   }  
-  fprintf(fp, "Logging test %i \n", pid);  
+  fprintf(fp, "%i", pid);  
   fflush(fp);
   fclose(fp);
   exit(0);
+}
+
+int stop(){
+  if((fp = fopen(PIDFILE, "r")) == NULL){
+    printf("couldn't open file, following error occured: %s\n", strerror(errno));
+    return -1;
+  }
+  while(fgets(line, 256, fp) != NULL)
+  {
+    sscanf (line, "%i", &pid);
+    kill(pid, SIGTERM); //kill process
+  }
+   fclose(fp);
+   unlink(PIDFILE); //delete run.pid
+   return 1;
 }

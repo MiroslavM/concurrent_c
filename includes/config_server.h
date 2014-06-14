@@ -21,7 +21,7 @@ void updateFile(char* fileName, unsigned long fileSize, char* content);
 void deleteFile(char* fileName);
 
 int savePid(int pid);  //Daemon Prozess ID wird gespeichert
-void stop();  //Signalbehandlung wenn Benutzer run stop ausführt, sollen die Ressourcen freigegeben werden.
+int stop();  //Signalbehandlung wenn Benutzer run stop ausführt, sollen die Ressourcen freigegeben werden.
 
 //FileInfo Struktur
 struct FileInfo {
