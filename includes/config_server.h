@@ -7,8 +7,9 @@
 #define BUFFSIZE 10240
 #define TRUE  1
 #define FALSE 0
-#define LOGFILE "log.txt"
 #define PIDFILE "run.pid"
+#define SRVPORT 6666
+#define RCVBUFFSIZE 1024
 
 #ifndef SERVERCONF
 #define SERVERCONF
@@ -22,6 +23,7 @@ void deleteFile(char* fileName);
 
 int savePid(int pid);  //Daemon Prozess ID wird gespeichert
 int stop();  //Signalbehandlung wenn Benutzer run stop ausführt, sollen die Ressourcen freigegeben werden.
+int checkProcessState();
 
 //FileInfo Struktur
 struct FileInfo {

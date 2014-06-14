@@ -1,5 +1,8 @@
 #include "commonlib.h"
 
+#define SRVPORT 6666
+#define RCVBUFFSIZE 1024
+
 //Prototypen der Client functionen
 #ifndef CLIENTCONF
 #define CLIENTCONF
