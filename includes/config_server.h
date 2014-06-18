@@ -4,15 +4,16 @@
 #include <stdio.h>
 #include "commonlib.h"
 
-#define BUFFSIZE 10240
-#define TRUE  1
-#define FALSE 0
 #define PIDFILE "run.pid"
 #define SRVPORT 6666
 #define RCVBUFFSIZE 1024
+#define MAXCONNECTIONS 32
 
 #ifndef SERVERCONF
 #define SERVERCONF
+
+//Fehler werden auf stderr ausgegeben.
+void handleErrors(int number, const char *message);
 
 //Manipulation der Dateien
 void listFiles();
@@ -21,9 +22,14 @@ void readFile(char* fileName);
 void updateFile(char* fileName, unsigned long fileSize, char* content);
 void deleteFile(char* fileName);
 
+//Initialisierung des Daemons
 int savePid(int pid);  //Daemon Prozess ID wird gespeichert
 int stop();  //Signalbehandlung wenn Benutzer run stop ausführt, sollen die Ressourcen freigegeben werden.
 int checkProcessState();
+
+//Initialisierung des TCP-Servers
+int initServer();
+void signalHandler();
 
 //FileInfo Struktur
 struct FileInfo {
