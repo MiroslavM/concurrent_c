@@ -14,6 +14,7 @@
 #include <arpa/inet.h>
 
 #define BUFFSIZE 10240
+#define RCVBUFFSIZE 1024
 #define TRUE  1
 #define FALSE 0
 #define SRVIP "127.0.0.1"

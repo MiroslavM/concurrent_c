@@ -6,7 +6,6 @@
 
 #define PIDFILE "run.pid"
 #define SRVPORT 6666
-#define RCVBUFFSIZE 1024
 #define MAXCONNECTIONS 32
 
 #ifndef SERVERCONF
@@ -30,6 +29,7 @@ int checkProcessState();
 //Initialisierung des TCP-Servers
 int initServer();
 void signalHandler();
+void doProcessing(int socket);
 
 //FileInfo Struktur
 struct FileInfo {

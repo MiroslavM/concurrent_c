@@ -20,7 +20,6 @@ void getReadResult(int Socket);
 void getUpdateResult(int Socket);
 void getDeleteResult(int Socket);
 
-void howToUse(char **argv);
 void clientCommandParser(int argc, char **argv);
 int initClientConnection();
 void handleErrors(int number, const char *message);

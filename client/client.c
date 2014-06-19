@@ -6,30 +6,35 @@
   unsigned short serverPort, clientPort;
   unsigned int serverAddressSize;
   
+  char receiveBuffer[RCVBUFFSIZE];
+  int n, w;
+  
 int main(int argc, char* argv[]){
-  clientCommandParser(argc, argv);
+  
+  //clientCommandParser(argc, argv);
 
   
 	//Socket für Kommunikation mit Server öffnen.
 	int socket = initClientConnection();
-  fileList(socket);
+  handleErrors(socket, "Client Socket open\n");
+  //fileList(socket);
+  getListResult(socket);
 	
 	exit(0);
   
 }
 
-void howToUse(char **argv){
-	printf("Usage:\n");
-	printf("\tlist files   :  # %s list\n", argv[0]);
-	printf("\tcreate file  :  # %s create <local-filename>\n", argv[0]);
-	printf("\tread file    :  # %s read <remote-filename>\n", argv[0]);
-	printf("\tupdate file  :  # %s update <remote-filename> <local-filename>\n", argv[0]);
-	printf("\tdelete file  :  # %s delete <remote-filename>\n\n", argv[0]);
-	exit(0);
-}
-
 void clientCommandParser(int argc, char **argv){
-	 
+	 if(argc == 1){
+    printf("Usage:\n");
+    printf("\tlist files   :  # %s list\n", argv[0]);
+    printf("\tcreate file  :  # %s create <local-filename>\n", argv[0]);
+    printf("\tread file    :  # %s read <remote-filename>\n", argv[0]);
+    printf("\tupdate file  :  # %s update <remote-filename> <local-filename>\n", argv[0]);
+    printf("\tdelete file  :  # %s delete <remote-filename>\n\n", argv[0]);
+    exit(0);
+   }
+   
 }
 
 //Verbindung zu Server öffnen
@@ -46,7 +51,7 @@ int initClientConnection(){
 	
 	int res;
 	res = connect(client_socket, (struct sockaddr *) &serverInfo, sizeof(serverInfo));
-	handleErrors(res, "Client ist verbunden");
+	handleErrors(res, "Client not connected");
 	serverAddressSize = sizeof(clientInfo);
 	return client_socket;
   
@@ -56,7 +61,7 @@ void fileList(int socket){
 	char *action = malloc(sizeof(char) * 6);
 	action[5] = '\0';
         snprintf(action, 5, "%s", "list\n");
-        send(Socket, action, 5, 0);
+        send(socket, action, 5, 0);
 	free(action);
 }
 
@@ -76,76 +81,23 @@ void fileDelete(int Socket, char *remoteFilename){
   
 }
 
-void getListResult(int Socket){
-	int filesOnServer = 0;
-	int receivedFiles = 0;
-	char rBuffer[BUFFERSIZE];
+void getListResult(int socket){
 	while(TRUE){
-		int size = recv(Socket, rBuffer, BUFFERSIZE-1, MSG_DONTWAIT); 
-		if (size < 0 && errno == EAGAIN) {
-			/* no data for now, call back when the socket is readable */
+    printf("empfang: \n");
+		/*int received = recv(socket, receiveBuffer, RCVBUFFSIZE-1, MSG_DONTWAIT); //Empfängt die Daten im Non-Blocking Modus
+		if (received < 0 && errno == EAGAIN) {
+			//Keine Daten oder Socket nicht lesbar...
+      handleErrors(received, "Socket not readable\n");
 			continue;
+		}*/
+      w = write(socket, "Hallo Server\n", 14);
+      n = read(socket, receiveBuffer, RCVBUFFSIZE);
+      printf("%s", receiveBuffer);
+      handleErrors(n, "Daten empfangen\n");
+      printf("Anzahl empfangener Daten %d\n", n);
+      
 		}
-		if (parseAction == 0){
-			char *rBufferSave = strdup(rBuffer);
-			char *token = strtok( rBuffer, " \n" );
-			printf("%s ", token);
-			token = strtok( NULL, " \n" );
-			numberoffiles = atoi(token);
-			printf("%d\n", numberoffiles);
-			if (numberoffiles == 0){
-				break;
-			}
-			while (token != NULL){
-				token = strtok( NULL, " \n" );
-				if (token != NULL){
-					filecounter++;
-					printf("%s\n", token);
-				}
-			}
-			//filecounter++;
-			 
-			int t;
-                        for (t = 0; t < 63; t++){
-                                if (rBufferSave[t] == '\n'){
-                                        t++;
-                                        break;
-                                }
-                        }
-			//printf("saveeeme(%d)-t(%d)\n",  size, t);
-			if (numberoffiles == t){
-				//printf("not equal(%s)\n", rBuffer);
-				break;
-			}else{
-				char *recvBuffer = (char *) malloc(sizeof(char) * 64);
-				if (recvBuffer == NULL){
-					
-				}
-				strncpy(recvBuffer, rBuffer+t, sizeof(rBuffer)-t-1);
-				printf("%s", recvBuffer);
-				 
-			}
-			parseAction = 1;
-			
-		}else{
-			// count \n
-			int t;
-			for (t = 0; t < 63; t++){
-				if (rBuffer[t] == '\n'){
-					filecounter++;
-				}
-			}
-			
-			printf("%s", rBuffer);
-			//filecounter++;
-			//printf("%d-%d\n", numberoffiles, filecounter);
-			if (numberoffiles == filecounter){
-				break;
-			}
-		}
-		memset(rBuffer, 0, sizeof(rBuffer));
-	}
-	close(Socket);
+    close(socket);
 }
 
 //Funktion zur Anzeige möglicher Fehlermeldungen, Fehler werden auf stderr ausgegeben.

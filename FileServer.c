@@ -16,8 +16,10 @@
   
 int main(int argc, char* argv[]){
   //Benötigte Variablen
-  pid_t process_id = 0;
-  pid_t sid = 0;
+  //pid_t process_id = 0;
+  //pid_t sid = 0;
+  //char buffer[RCVBUFFSIZE];
+  //int n, r;
   
   //Falls der Benutzer stop eingibt.
   if(argc > 1){
@@ -36,7 +38,7 @@ int main(int argc, char* argv[]){
     printf("Server Process is allready running\n");
     exit(1);
   }
-  
+  /*
   if((process_id = fork()) < 0){
     handleErrors(process_id, "fork failed\n");
     exit(1);
@@ -50,7 +52,7 @@ int main(int argc, char* argv[]){
   //Kindprozess übernimmt die Session.
   sid = setsid();
   handleErrors(sid, "Couldn't take session control");
-  
+  */
   //Reagiere auf Signale
   struct sigaction signal_handler;
 		signal_handler.sa_handler = signalHandler; //Registriert signalHandler() als sa_handler
@@ -69,20 +71,48 @@ int main(int argc, char* argv[]){
   while (TRUE){
 			client_socket = accept(server_socket, (struct sockaddr *) &clientInfo, &clientAddressSize);
 			handleErrors(client_socket, "client socket accepted");
+      
 			//Für jeden Client wird ein neuer Prozess gestartet
 			pid_t pid;
 			pid = fork();
 			if (pid == -1){ 
 				handleErrors(-1, "Couldn't start new Client-Process");
-			}else if(pid == 0){							 
+			}else if(pid == 0){				 
 				handleErrors(1, "Client connected");
+        printf("process started\n");
+        
+        //Reagiere auf ankommende Befehle, case switches (list, create, read, update, delete)
+        doProcessing(client_socket);
+        
 				exit(0);
 			}
+      close(client_socket);
   }
-  //Reagiere auf ankommende Befehle, case switches (list, create, read, update, delete)
+  
   
   
   return (0);
+}
+
+void doProcessing(int sock){
+  int n;
+  char buffer[256];
+
+  bzero(buffer,256);
+
+  n = read(sock,buffer,255);
+  if (n < 0)
+  {
+      perror("ERROR reading from socket");
+      exit(1);
+  }
+  printf("Here is the message: %s\n",buffer);
+  n = write(sock,"I got your message\n",18);
+  if (n < 0) 
+  {
+      perror("ERROR writing to socket");
+      exit(1);
+  }
 }
 
 /*
@@ -177,9 +207,7 @@ void handleErrors(int number, const char *message){
 //Signalbehandlung
 void signalHandler(){
 	handleErrors(-1, "Application will be stopped...\n");
-/*
-	freeUsedRessources();
-       
-*/
+  //Offene Sockets schliessen.
+  close(server_socket);
 	exit(0);
 }
