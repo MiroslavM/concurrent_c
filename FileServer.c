@@ -82,7 +82,7 @@ int main(int argc, char* argv[]){
         printf("process started\n");
         
         //Reagiere auf ankommende Befehle, case switches (list, create, read, update, delete)
-        doProcessing(client_socket);
+        //doProcessing(client_socket);
         
 				exit(0);
 			}

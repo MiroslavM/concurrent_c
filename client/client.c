@@ -11,9 +11,7 @@
   
 int main(int argc, char* argv[]){
   
-  //clientCommandParser(argc, argv);
-
-  
+  clientCommandParser(argc, argv);  
 	//Socket für Kommunikation mit Server öffnen.
 	int socket = initClientConnection();
   handleErrors(socket, "Client Socket open\n");
@@ -26,13 +24,33 @@ int main(int argc, char* argv[]){
 
 void clientCommandParser(int argc, char **argv){
 	 if(argc == 1){
-    printf("Usage:\n");
-    printf("\tlist files   :  # %s list\n", argv[0]);
-    printf("\tcreate file  :  # %s create <local-filename>\n", argv[0]);
-    printf("\tread file    :  # %s read <remote-filename>\n", argv[0]);
-    printf("\tupdate file  :  # %s update <remote-filename> <local-filename>\n", argv[0]);
-    printf("\tdelete file  :  # %s delete <remote-filename>\n\n", argv[0]);
+    howToUse(argv);
     exit(0);
+   }else if(argc > 1){
+      if (!strcmp(argv[1], "LIST") || !strcmp(argv[1], "list")){
+          printf("List command set");
+          
+          
+      }else if(!strcmp(argv[1], "CREATE") || !strcmp(argv[1], "create")){
+          printf("C command set");
+          
+      
+      }else if(!strcmp(argv[1], "READ") || !strcmp(argv[1], "read")){
+          printf("R command set");
+          
+          
+      }else if(!strcmp(argv[1], "UPDATE") || !strcmp(argv[1], "update")){
+          printf("U command set");
+          
+          
+      }else if(!strcmp(argv[1], "DELETE") || !strcmp(argv[1], "delete")){
+          printf("D command set");
+          
+          
+      }else{
+        howToUse(argv);
+        exit(0);
+      }
    }
    
 }
@@ -66,7 +84,7 @@ void fileList(int socket){
 }
 
 void fileCreate(int Socket, char *filename){
-  
+  int checkFilename(char *filename);
 }
 
 void fileRead(int Socket, char *filename){
@@ -81,23 +99,35 @@ void fileDelete(int Socket, char *remoteFilename){
   
 }
 
+int checkFilename(char *filename){
+  if(sizeof(filename)>256){
+    printf("Filename length is limited to 256 characters.\n\r");
+    return (-1);
+  }
+  return 0;
+}
+
 void getListResult(int socket){
 	while(TRUE){
     printf("empfang: \n");
-		/*int received = recv(socket, receiveBuffer, RCVBUFFSIZE-1, MSG_DONTWAIT); //Empfängt die Daten im Non-Blocking Modus
+		int received = recv(socket, receiveBuffer, RCVBUFFSIZE-1, MSG_DONTWAIT); //Empfängt die Daten im Non-Blocking Modus
 		if (received < 0 && errno == EAGAIN) {
 			//Keine Daten oder Socket nicht lesbar...
       handleErrors(received, "Socket not readable\n");
 			continue;
-		}*/
-      w = write(socket, "Hallo Server\n", 14);
-      n = read(socket, receiveBuffer, RCVBUFFSIZE);
-      printf("%s", receiveBuffer);
-      handleErrors(n, "Daten empfangen\n");
-      printf("Anzahl empfangener Daten %d\n", n);
-      
+		}
+    
 		}
     close(socket);
+}
+
+void howToUse(char **argv){
+  printf("How to use:\n");
+  printf("\tlist files   :  # %s LIST\n", argv[0]);
+  printf("\tcreate file  :  # %s CREATE\t <local-filename>\n", argv[0]);
+  printf("\tread file    :  # %s READ\t <remote-filename>\n", argv[0]);
+  printf("\tupdate file  :  # %s UPDATE\t <remote-filename> <local-filename>\n", argv[0]);
+  printf("\tdelete file  :  # %s DELETE\t <remote-filename>\n\n", argv[0]);
 }
 
 //Funktion zur Anzeige möglicher Fehlermeldungen, Fehler werden auf stderr ausgegeben.
