@@ -21,10 +21,17 @@ void readFile(int socket, char *fileName);
 void updateFile(int socket, char *fileName, char *newFileName, char *fileSize, char* content);
 void deleteFile(int socket, char *fileName);
 
+void sendListResult(int socket);
+void sendCreateResult(int socket);
+void sendReadResult(int socket);
+void sendUpdateresult(int socket);
+void sendDeleteFileResult(int socket);
+
 //Manipulation von Speicher
 int getShmId();
 void start();
 void append(int semaphoreId, unsigned int fileSize, char fileName, int sharedMemoryId);
+void detach(char *fileName);
 
 //Initialisierung des Daemons
 int savePid(int pid);  //Daemon Prozess ID wird gespeichert

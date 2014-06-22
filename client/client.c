@@ -177,6 +177,9 @@ int checkFilename(char *filename){
   return 0;
 }
 
+/*
+ * Funktionen zum Empfang der vom Server gelieferten Resultate
+ * */
 void getListResult(int socket){
 	while(TRUE){
     printf("empfang: \n");
@@ -190,6 +193,20 @@ void getListResult(int socket){
 		}
     //close(socket);
 }
+
+void getCreateResult(int Socket){
+  
+}
+void getReadResult(int Socket){
+  
+}
+void getUpdateResult(int Socket){
+  
+}
+void getDeleteResult(int Socket){
+  
+}
+
 
 void howToUse(char **argv){
   printf("How to use:\n");

@@ -206,7 +206,10 @@ int main(int argc, char* argv[]){
 
 //Dateiliste an Client senden.
 void listFiles(int socket){
-  
+  //Solange FileInfo Structs existieren die Dateinamen und Grössen in buffer speichern
+  while(fileInfoBegin->nextFile){
+    
+  }
 }
 //Dateien in Shared Memory abspeichern und an Dynamische Liste anketten.
 void createFile(int socket, char *content, char *fileName, char *fileSize){
@@ -218,6 +221,7 @@ void createFile(int socket, char *content, char *fileName, char *fileSize){
   int shMemoryId = 0;
   char fN[5] = "File";
   
+  //Hinzufügen von Dateien soll exclusiv erfolgen. http://openbook.galileocomputing.de/unix_guru/node394.html
 	void append(int semId, unsigned int fileSizeInt, char fN, int shMemoryId);
   
   printf("After append: %i%i%i%s%i\n", semId, shMemoryId, fileSizeInt, fN, fileInfoBegin->fileSize);
@@ -238,14 +242,37 @@ void createFile(int socket, char *content, char *fileName, char *fileSize){
 }
 //Datei an Client senden.
 void readFile(int socket, char* fileName){
+  //Shared Memory Segment direkt an den Client übertragen, falls Datei vorhanden. Benötigt keine weiteren Absicherungen (semaphore)
   
 }
 //Datei durch andere Datei ersetzen.
 void updateFile(int socket, char *fileName, char *newFileName, char *fileSize, char *content){
+  /*Zuerst wird überprüft, ob Datei vorhanden dann wird das bisherige Segment gelöscht und ein neues angelegt,
+   um es anschliessend mit dem ursprünglichen FileInfo zu verbinden.
+   * */
+}
+
+//Datei Löschen
+void deleteFile(int socket, char *fileName){
   
 }
-//Datei löschen.
-void deleteFile(int socket, char *fileName){
+
+/*
+ * Funktionen, welche die Rückgabewerte an die Clients senden.
+ * */
+void sendListResult(int socket){
+  
+}
+void sendCreateResult(int socket){
+  
+}
+void sendReadResult(int socket){
+  
+}
+void sendUpdateresult(int socket){
+  
+}
+void sendDeleteFileResult(int socket){
   
 }
 
@@ -326,26 +353,10 @@ int getShmId(){
 	return storshmid;*/
   return 0;
 }
-
-void doProcessing(int sock){
-  int n,s;
-  char buffer[256];
-
-  bzero(buffer,256);
-
-  n = read(sock,buffer,255);
-  if (n < 0)
-  {
-      perror("ERROR reading from socket");
-      exit(1);
-  }
-  printf("Here is the message: %s\n",buffer);
-  s = send(sock,"I got your message\n",19, MSG_WAITALL);
-  if (s < 0) 
-  {
-      perror("ERROR writing to socket");
-      exit(1);
-  }
+//Funktion um ein Struct aus der Liste zu entfernen.
+void detach(char *fileName){
+  //http://openbook.galileocomputing.de/c_von_a_bis_z/021_c_dyn_datenstrukturen_002.htm#mj0230cca6aa7fb87181f7f69e396d6fd8
+  
 }
 
 /*
