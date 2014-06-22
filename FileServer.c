@@ -63,7 +63,7 @@ int main(int argc, char* argv[]){
   
   //Oeffne TCP Socket
   server_socket = initServer();
-    handleErrors(server_socket, "Socket opened\n");
+    handleErrors(server_socket, "Server Socket not opened\n");
     
   //unsigned int bytesReceived;
   
@@ -79,14 +79,127 @@ int main(int argc, char* argv[]){
 				handleErrors(-1, "Couldn't start new Client-Process");
 			}else if(pid == 0){				 
 				handleErrors(1, "Client connected");
-        printf("process started\n");
-        
-        //Reagiere auf ankommende Befehle, case switches (list, create, read, update, delete)
         //doProcessing(client_socket);
+        //Reagiere auf ankommende Befehle, case switches (list, create, read, update, delete)
+				int totalFileBytesReceived = 0;
+        int t = 0;
+				//Speichert die empfangenen optionen:list,create,read,update or delete
+				char command[64]; 
+            command[63] = '\0';
+            memset(command, 0, sizeof(command));
+				//Speichert den empfangenen Dateinamen
+				char fileName[256];
+            fileName[255] = '\0';
+            memset(fileName, 0, sizeof(fileName));
+				//Speichert die Grösse der Datei
+				char fileSize[64];
+            fileSize[63] = '\0';
+            memset(fileSize, 0, sizeof(fileSize));
         
+				//Datei zwischenspeichern, bevor sie in Shared Memory abgelegt wird.
+				char *receiveBuffer = (char *) malloc(sizeof(char) * RCVBUFFSIZE);
+				if (receiveBuffer == NULL){
+					handleErrors(-1, "Memory allocation failed!");
+          return -1;
+				}
+				 
+				//Das empfangene Kommando des Clients überprüfen.
+				int commandAction = 0;
+				while(TRUE){
+					char recBuffer[RCVBUFFSIZE];
+					int recvMsgSize = recv(client_socket, recBuffer, RCVBUFFSIZE, MSG_DONTWAIT);
+					 
+					if (commandAction == 0){
+							int cA;
+							for (cA = 0; cA < RCVBUFFSIZE; cA++){
+								if (recBuffer[cA] == '\n'){
+                  cA++;
+									break;
+                }
+							}
+              
+							//Empfangene Zeile splitten.
+							char separator[]   = " \n";
+							char *token;
+							char *com = "";
+							char *lFileN = "";
+							char *rFileN = "";
+              char *fSize = "";
+              
+							token = strtok( recBuffer, separator );
+							int counter = 0;
+							while( token != NULL ){
+								if (counter == 0){
+									com = token;
+								}else if(counter == 1){
+									lFileN = token;
+								}else if(counter == 2){
+									rFileN = token;
+								}else if(counter == 3){
+                  fSize = token;
+                }
+								token = strtok( NULL, separator );
+								counter++;
+							}
+              
+							//save received values
+							snprintf(command, sizeof(com), "%s", com);
+              printf("%s %i\n", command, strncmp(command, "list", 4));
+							if (!strncmp(command, "list", 4)){
+                break;
+							}else if(!strncmp(command, "create", 6)){
+								snprintf(fileName, sizeof(fileName), "%s", lFileN);
+								snprintf(fileSize, sizeof(fileSize), "%s", fSize);
+                printf("%c", *fileSize);
+								break;
+							}else if(!strncmp(command, "read", 4)){
+								snprintf(fileName, sizeof(fileName), "%s", lFileN);
+                break;
+							}else if(!strncmp(command, "update", 6)){
+								snprintf(fileName, sizeof(fileName), "%s", lFileN);
+								snprintf(fileSize, sizeof(fileSize), "%s", rFileN);
+								break;
+							}else if(!strncmp(command, "delete", 6)){
+								snprintf(fileName, sizeof(fileName), "%s", lFileN);
+                break;
+							}
+							// ==  > rbuffer has only meta date "create filename\n", no content
+							if (recvMsgSize == t){
+                
+							}else{
+								totalFileBytesReceived = sizeof(recBuffer)-t-1;
+								strncpy(receiveBuffer, recBuffer+t, sizeof(recBuffer)-t-1);
+							}
+							commandAction = 1;
+					}else{
+						totalFileBytesReceived += recvMsgSize;
+						strncpy(receiveBuffer+strlen(receiveBuffer), recBuffer,sizeof(recBuffer));
+						if (atoi(fileSize) == totalFileBytesReceived){
+							break;
+						}
+					}
+					memset(recBuffer, 0, sizeof(recBuffer));
+				}
+        
+				//do job client requested
+				if (!strncmp(command, "list", 4)){
+					//listFiles(client_socket);
+				}else if(!strncmp(command, "create", 6)){
+					printf("create");
+          //createFile(clientSocket, recvBuffer, filename, filesize);
+				}else if(!strncmp(command, "read", 4)){
+					//readFile(client_socket, fileName);
+				}else if(!strncmp(command, "update", 6)){
+					//updateFile(client_socket, recvBuffer, fileName, fileSize);
+				}else if(!strncmp(command, "delete", 6)){
+					//deleteFile(client_socket, fileName);
+				}
+				free(receiveBuffer);
+				//exit will cleanup all malloc'ed heap! see documentation
+        //close(server_socket);
 				exit(0);
 			}
-      close(client_socket);
+      //close(server_socket);
   }
   
   
@@ -95,7 +208,7 @@ int main(int argc, char* argv[]){
 }
 
 void doProcessing(int sock){
-  int n;
+  int n,s;
   char buffer[256];
 
   bzero(buffer,256);
@@ -107,8 +220,8 @@ void doProcessing(int sock){
       exit(1);
   }
   printf("Here is the message: %s\n",buffer);
-  n = write(sock,"I got your message\n",18);
-  if (n < 0) 
+  s = send(sock,"I got your message\n",19, MSG_WAITALL);
+  if (s < 0) 
   {
       perror("ERROR writing to socket");
       exit(1);
@@ -209,5 +322,6 @@ void signalHandler(){
 	handleErrors(-1, "Application will be stopped...\n");
   //Offene Sockets schliessen.
   close(server_socket);
+  close(client_socket);
 	exit(0);
 }
