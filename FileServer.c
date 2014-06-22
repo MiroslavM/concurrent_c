@@ -122,9 +122,9 @@ int main(int argc, char* argv[]){
 							char separator[]   = " \n";
 							char *token;
 							char *com = "";
-							char *lFileN = "";
-							char *rFileN = "";
-              char *fSize = "";
+							char *opt1 = "";
+							char *opt2 = "";
+              char *opt3 = "";
               
 							token = strtok( recBuffer, separator );
 							int counter = 0;
@@ -132,11 +132,11 @@ int main(int argc, char* argv[]){
 								if (counter == 0){
 									com = token;
 								}else if(counter == 1){
-									lFileN = token;
+									opt1 = token;
 								}else if(counter == 2){
-									rFileN = token;
+									opt2 = token;
 								}else if(counter == 3){
-                  fSize = token;
+                  opt3 = token;
                 }
 								token = strtok( NULL, separator );
 								counter++;
@@ -144,26 +144,24 @@ int main(int argc, char* argv[]){
               
 							//save received values
 							snprintf(command, sizeof(com), "%s", com);
-              printf("%s %i\n", command, strncmp(command, "list", 4));
 							if (!strncmp(command, "list", 4)){
                 break;
 							}else if(!strncmp(command, "create", 6)){
-								snprintf(fileName, sizeof(fileName), "%s", lFileN);
-								snprintf(fileSize, sizeof(fileSize), "%s", fSize);
-                printf("%c", *fileSize);
+								snprintf(fileName, sizeof(fileName), "%s", opt1);
+								snprintf(fileSize, sizeof(fileSize), "%s", opt2);
 								break;
 							}else if(!strncmp(command, "read", 4)){
-								snprintf(fileName, sizeof(fileName), "%s", lFileN);
+								snprintf(fileName, sizeof(fileName), "%s", opt1);
                 break;
 							}else if(!strncmp(command, "update", 6)){
-								snprintf(fileName, sizeof(fileName), "%s", lFileN);
-								snprintf(fileSize, sizeof(fileSize), "%s", rFileN);
+								snprintf(fileName, sizeof(fileName), "%s", opt1);
+								snprintf(fileSize, sizeof(fileSize), "%s", opt3);
 								break;
 							}else if(!strncmp(command, "delete", 6)){
-								snprintf(fileName, sizeof(fileName), "%s", lFileN);
+								snprintf(fileName, sizeof(fileName), "%s", opt1);
                 break;
 							}
-							// ==  > rbuffer has only meta date "create filename\n", no content
+							// Falls keine Daten angekommen sind...
 							if (recvMsgSize == t){
                 
 							}else{
@@ -185,8 +183,7 @@ int main(int argc, char* argv[]){
 				if (!strncmp(command, "list", 4)){
 					//listFiles(client_socket);
 				}else if(!strncmp(command, "create", 6)){
-					printf("create");
-          //createFile(clientSocket, recvBuffer, filename, filesize);
+          createFile(client_socket, receiveBuffer, fileName, fileSize);
 				}else if(!strncmp(command, "read", 4)){
 					//readFile(client_socket, fileName);
 				}else if(!strncmp(command, "update", 6)){
@@ -195,16 +192,34 @@ int main(int argc, char* argv[]){
 					//deleteFile(client_socket, fileName);
 				}
 				free(receiveBuffer);
-				//exit will cleanup all malloc'ed heap! see documentation
-        //close(server_socket);
 				exit(0);
 			}
-      //close(server_socket);
   }
   
   
   
   return (0);
+}
+
+//Dateiliste an Client senden.
+void listFiles(int socket){
+  
+}
+//Dateien in Shared Memory abspeichern und an Dynamische Liste anketten.
+void createFile(int socket, char *content, char *fileName, char *fileSize){
+  printf("Creating Files\n");
+}
+//Datei an Client senden.
+void readFile(int socket, char* fileName){
+  
+}
+//Datei durch andere Datei ersetzen.
+void updateFile(int socket, char *fileName, char *newFileName, char *fileSize, char *content){
+  
+}
+//Datei löschen.
+void deleteFile(int socket, char *fileName){
+  
 }
 
 void doProcessing(int sock){

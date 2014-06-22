@@ -15,11 +15,11 @@
 void handleErrors(int number, const char *message);
 
 //Manipulation der Dateien
-void listFiles();
-void createFile(char* fileName, unsigned long fileSize, char* content);
-void readFile(char* fileName);
-void updateFile(char* fileName, unsigned long fileSize, char* content);
-void deleteFile(char* fileName);
+void listFiles(int socket);
+void createFile(int socket, char *content, char *fileName, char *fileSize);
+void readFile(int socket, char *fileName);
+void updateFile(int socket, char *fileName, char *newFileName, char *fileSize, char* content);
+void deleteFile(int socket, char *fileName);
 
 //Initialisierung des Daemons
 int savePid(int pid);  //Daemon Prozess ID wird gespeichert
