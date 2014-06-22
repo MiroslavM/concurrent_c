@@ -79,10 +79,10 @@ int main(int argc, char* argv[]){
 				handleErrors(-1, "Couldn't start new Client-Process");
 			}else if(pid == 0){				 
 				handleErrors(1, "Client connected");
-        //doProcessing(client_socket);
         //Reagiere auf ankommende Befehle, case switches (list, create, read, update, delete)
-				int totalFileBytesReceived = 0;
-        int t = 0;
+				int dataBytesReceived = 0;
+        int cA = 0;
+        
 				//Speichert die empfangenen optionen:list,create,read,update or delete
 				char command[64]; 
             command[63] = '\0';
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]){
             fileSize[63] = '\0';
             memset(fileSize, 0, sizeof(fileSize));
         
-				//Datei zwischenspeichern, bevor sie in Shared Memory abgelegt wird.
+				//Datei zwischenspeichern, bevor sie in Shared Memory abgelegt wird. (Der Client muss nicht warten)
 				char *receiveBuffer = (char *) malloc(sizeof(char) * RCVBUFFSIZE);
 				if (receiveBuffer == NULL){
 					handleErrors(-1, "Memory allocation failed!");
@@ -108,9 +108,8 @@ int main(int argc, char* argv[]){
 				while(TRUE){
 					char recBuffer[RCVBUFFSIZE];
 					int recvMsgSize = recv(client_socket, recBuffer, RCVBUFFSIZE, MSG_DONTWAIT);
-					 
+          handleErrors(recvMsgSize, "No message received");
 					if (commandAction == 0){
-							int cA;
 							for (cA = 0; cA < RCVBUFFSIZE; cA++){
 								if (recBuffer[cA] == '\n'){
                   cA++;
@@ -149,7 +148,13 @@ int main(int argc, char* argv[]){
 							}else if(!strncmp(command, "create", 6)){
 								snprintf(fileName, sizeof(fileName), "%s", opt1);
 								snprintf(fileSize, sizeof(fileSize), "%s", opt2);
-								break;
+                unsigned int fileSizeInt = atoi(fileSize);
+                  //Datei zwischenspeichern, bevor sie in Shared Memory abgelegt wird. (Der Client muss nicht warten)
+                  char *receiveBuffer = (char *) malloc(sizeof(char) * (fileSizeInt + 1));
+                  if (receiveBuffer == NULL){
+                    handleErrors(-1, "Memory allocation failed!");
+                    return -1;
+                  }
 							}else if(!strncmp(command, "read", 4)){
 								snprintf(fileName, sizeof(fileName), "%s", opt1);
                 break;
@@ -161,18 +166,26 @@ int main(int argc, char* argv[]){
 								snprintf(fileName, sizeof(fileName), "%s", opt1);
                 break;
 							}
+              printf("%i", cA);
 							// Falls keine Daten angekommen sind...
-							if (recvMsgSize == t){
-                
+							if (recvMsgSize == cA){
+                printf("No data\n");
 							}else{
-								totalFileBytesReceived = sizeof(recBuffer)-t-1;
-								strncpy(receiveBuffer, recBuffer+t, sizeof(recBuffer)-t-1);
+								dataBytesReceived = RCVBUFFSIZE - sizeof(recBuffer)-cA;
+                strncpy(receiveBuffer, recBuffer+cA, sizeof(recBuffer)-cA);
+                if(atoi(fileSize) == (sizeof(recBuffer) - dataBytesReceived)){
+                  break;
+                }
 							}
 							commandAction = 1;
-					}else{
-						totalFileBytesReceived += recvMsgSize;
-						strncpy(receiveBuffer+strlen(receiveBuffer), recBuffer,sizeof(recBuffer));
-						if (atoi(fileSize) == totalFileBytesReceived){
+					}else{//Falls Datei grösser als 1024 Bytes
+						dataBytesReceived += recvMsgSize;
+            printf("Data Bytes received %i dbr: %i \n", recvMsgSize,dataBytesReceived);
+						//strncpy(receiveBuffer+strlen(receiveBuffer), recBuffer,sizeof(recBuffer));
+            //Falls die Dateigrösse den empfangenen Bytes entspricht ist der Job erledigt.
+            printf("%i %i\n", atoi(fileSize), dataBytesReceived);
+            break;
+						if (atoi(fileSize) == dataBytesReceived){
 							break;
 						}
 					}
@@ -207,7 +220,11 @@ void listFiles(int socket){
 }
 //Dateien in Shared Memory abspeichern und an Dynamische Liste anketten.
 void createFile(int socket, char *content, char *fileName, char *fileSize){
-  printf("Creating Files\n");
+  unsigned int fileSizeInt = atoi(fileSize);
+  for(int i = 0; i < fileSizeInt; i++){
+    printf("content:\n %c\n", content[i]);
+  }
+  
 }
 //Datei an Client senden.
 void readFile(int socket, char* fileName){

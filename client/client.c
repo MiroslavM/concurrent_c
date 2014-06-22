@@ -135,34 +135,25 @@ void fileCreate(int socket, char *filename){
 	send(socket, command, msgsize-1, 0);
   
 	free(command);
-  fclose(filePointer);
   
-  /*
-	//Dateigrösse überprüfen.
-	
-	 
-	//set pointer to the beginning of the file
-        fseek(fp, 0L, SEEK_SET);
-	
-	unsigned int totalbytes;
-        totalbytes = 0;
-	
-	char file[BUFFERSIZE];
-        size_t bytes = 0;
+	unsigned int bytesSent = 0;
+  
+  int offset = 0;
+	char file[RCVBUFFSIZE];
+  size_t data = 0;
+  size_t sent = 0;
 
-	// do not send all at once
-	while ( (bytes = fread(file, sizeof(char), BUFFERSIZE, fp)) > 0){
-		int offset = 0;
-        	int sent;
-		while ((sent = send(Socket, file + offset, bytes, 0)) > 0) {
-			totalbytes += sent;
-                        offset += sent;
-                        bytes -= sent;
-		}
-		
+	//Lese die Datei aus und Sende die ausgelesenen Bytes [BUFFERSIZE]
+	while ( (data = fread(file, sizeof(char), RCVBUFFSIZE, filePointer)) > 0){
+		while ((sent = send(socket, file + offset, data + 1024, 0)) > 0) {
+      handleErrors(sent, "Create doesn't send file");
+			bytesSent += sent;
+      offset += sent;
+      data -= sent;
+		}		
 	}
-        fclose(fp);
-        */
+  close(socket);
+  fclose(filePointer);
 }
 
 void fileRead(int Socket, char *filename){
