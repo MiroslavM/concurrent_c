@@ -116,7 +116,7 @@ void fileList(int socket){
 }
 
 //Sendet eine Datei an den Socket
-void fileCreate(int socket, char *filename){
+void fileCreate(int socket, char *filename){  
   //int checkFilename(char *filename);
   FILE *filePointer;
 	filePointer = fopen(filename, "r");
@@ -129,10 +129,11 @@ void fileCreate(int socket, char *filename){
   fstat(fd, &buf);
   unsigned int size = buf.st_size;
   
-  int msgsize = size + sizeof(filename) + 7 + 5; //Dateigrösse, create, abstände
-  char *command = malloc(sizeof(char) * size);
-  snprintf(command, msgsize, "%s %s %s %u \n", "create", filename, " ", size);
-	send(socket, command, msgsize-1, 0);
+  int msgsize = size + sizeof(filename) + 7 + 6; //Dateigrösse, create, abstände
+  printf("%i", msgsize);
+  char *command = malloc(sizeof(char) * msgsize);
+  snprintf(command, msgsize, "%s %s %u %s %s", "create", filename, size, " ", "\n");
+	send(socket, command, msgsize - 1, 0);
   
 	free(command);
   

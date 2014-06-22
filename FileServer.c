@@ -107,7 +107,7 @@ int main(int argc, char* argv[]){
 				int commandAction = 0;
 				while(TRUE){
 					char recBuffer[RCVBUFFSIZE];
-					int recvMsgSize = recv(client_socket, recBuffer, RCVBUFFSIZE, 0);
+					int recvMsgSize = recv(client_socket, recBuffer, RCVBUFFSIZE, MSG_DONTWAIT);
             handleErrors(recvMsgSize, "No message received");
 					if (commandAction == 0){
 								for (cA = 0; cA < RCVBUFFSIZE; cA++){
@@ -116,6 +116,7 @@ int main(int argc, char* argv[]){
                     break;
                   }
                 }
+              printf("%s", recBuffer);
 							//Empfangene Zeile splitten.
 							char separator[]   = " \n";
 							char *token;
@@ -127,8 +128,7 @@ int main(int argc, char* argv[]){
 							int counter = 0;
 							while( token != NULL ){
 								if (counter == 0){
-									com = token;
-                  printf("%s", com);           
+									com = token;   
 								}else if(counter == 1){
 									opt1 = token;
 								}else if(counter == 2){
@@ -139,7 +139,6 @@ int main(int argc, char* argv[]){
 								token = strtok( NULL, separator );
 								counter++;
 							}
-              printf("%s", command);
 							snprintf(command, sizeof(com), "%s", com);
 							if (!strncmp(command, "list", 4)){
                 
@@ -186,6 +185,7 @@ int main(int argc, char* argv[]){
 				if (!strncmp(command, "list", 4)){          
 					//listFiles(client_socket);
 				}else if(!strncmp(command, "create", 6)){
+          printf("create");
           createFile(client_socket, receiveBuffer, fileName, fileSize);
 				}else if(!strncmp(command, "read", 4)){
 					//readFile(client_socket, fileName);
@@ -218,7 +218,7 @@ void createFile(int socket, char *content, char *fileName, char *fileSize){
   int shMemoryId = 0;
   char fN[5] = "File";
   
-	//void append(int semId, unsigned int fileSizeInt, char fN, int shMemoryId);
+	void append(int semId, unsigned int fileSizeInt, char fN, int shMemoryId);
   
   printf("After append: %i%i%i%s%i\n", semId, shMemoryId, fileSizeInt, fN, fileInfoBegin->fileSize);
   
