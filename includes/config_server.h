@@ -21,6 +21,11 @@ void readFile(int socket, char *fileName);
 void updateFile(int socket, char *fileName, char *newFileName, char *fileSize, char* content);
 void deleteFile(int socket, char *fileName);
 
+//Manipulation von Speicher
+int getShmId();
+void start();
+void append(int semaphoreId, unsigned int fileSize, char fileName, int sharedMemoryId);
+
 //Initialisierung des Daemons
 int savePid(int pid);  //Daemon Prozess ID wird gespeichert
 int stop();  //Signalbehandlung wenn Benutzer run stop ausführt, sollen die Ressourcen freigegeben werden.
@@ -35,10 +40,8 @@ void doProcessing(int socket);
 struct FileInfo {
   sem_t semaphore;
   int semaphoreId;
-  int fileInfoShmid;
-  unsigned long fileSize;
+  unsigned int fileSize;
   char fileName;
-  char content;
   int sharedMemoryId;
   struct FileInfo *prevFile;
   struct FileInfo *nextFile;

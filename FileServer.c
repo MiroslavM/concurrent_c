@@ -1,8 +1,8 @@
 #include "includes/config_server.h"
 //Dateicontainer
-  struct FileInfo fileInfoRoot;    //Pointer auf erste FileInfo Struktur
-  struct FileInfo fileInfoCurrent; //aktuelles Struct
-
+  struct FileInfo *fileInfoBegin;    //Pointer auf erste FileInfo Struktur
+  struct FileInfo *fileInfoEnd;      //aktuelles Struct
+  
 //Daemon Variablen
   FILE *fp = NULL;
   char line[256];
@@ -102,21 +102,20 @@ int main(int argc, char* argv[]){
 					handleErrors(-1, "Memory allocation failed!");
           return -1;
 				}
-				 
+        
 				//Das empfangene Kommando des Clients überprüfen.
 				int commandAction = 0;
 				while(TRUE){
 					char recBuffer[RCVBUFFSIZE];
-					int recvMsgSize = recv(client_socket, recBuffer, RCVBUFFSIZE, MSG_DONTWAIT);
-          handleErrors(recvMsgSize, "No message received");
+					int recvMsgSize = recv(client_socket, recBuffer, RCVBUFFSIZE, 0);
+            handleErrors(recvMsgSize, "No message received");
 					if (commandAction == 0){
-							for (cA = 0; cA < RCVBUFFSIZE; cA++){
-								if (recBuffer[cA] == '\n'){
-                  cA++;
-									break;
+								for (cA = 0; cA < RCVBUFFSIZE; cA++){
+                  if (recBuffer[cA] == '\n'){
+                    cA++;
+                    break;
+                  }
                 }
-							}
-              
 							//Empfangene Zeile splitten.
 							char separator[]   = " \n";
 							char *token;
@@ -124,12 +123,12 @@ int main(int argc, char* argv[]){
 							char *opt1 = "";
 							char *opt2 = "";
               char *opt3 = "";
-              
 							token = strtok( recBuffer, separator );
 							int counter = 0;
 							while( token != NULL ){
 								if (counter == 0){
 									com = token;
+                  printf("%s", com);           
 								}else if(counter == 1){
 									opt1 = token;
 								}else if(counter == 2){
@@ -140,21 +139,20 @@ int main(int argc, char* argv[]){
 								token = strtok( NULL, separator );
 								counter++;
 							}
-              
-							//save received values
+              printf("%s", command);
 							snprintf(command, sizeof(com), "%s", com);
 							if (!strncmp(command, "list", 4)){
+                
                 break;
 							}else if(!strncmp(command, "create", 6)){
 								snprintf(fileName, sizeof(fileName), "%s", opt1);
 								snprintf(fileSize, sizeof(fileSize), "%s", opt2);
                 unsigned int fileSizeInt = atoi(fileSize);
-                  //Datei zwischenspeichern, bevor sie in Shared Memory abgelegt wird. (Der Client muss nicht warten)
-                  char *receiveBuffer = (char *) malloc(sizeof(char) * (fileSizeInt + 1));
-                  if (receiveBuffer == NULL){
-                    handleErrors(-1, "Memory allocation failed!");
-                    return -1;
-                  }
+                //Zwischenspeicher, bevor die Datei in Shared Memory abgelegt wird. (Der Client muss nicht warten)
+                char *receiveBuffer = (char *) malloc(sizeof(char) * fileSizeInt);
+                if (receiveBuffer == NULL){
+                  handleErrors(-1, "Memory allocation failed!");
+                }
 							}else if(!strncmp(command, "read", 4)){
 								snprintf(fileName, sizeof(fileName), "%s", opt1);
                 break;
@@ -166,34 +164,26 @@ int main(int argc, char* argv[]){
 								snprintf(fileName, sizeof(fileName), "%s", opt1);
                 break;
 							}
-              printf("%i", cA);
 							// Falls keine Daten angekommen sind...
 							if (recvMsgSize == cA){
                 printf("No data\n");
-							}else{
-								dataBytesReceived = RCVBUFFSIZE - sizeof(recBuffer)-cA;
-                strncpy(receiveBuffer, recBuffer+cA, sizeof(recBuffer)-cA);
-                if(atoi(fileSize) == (sizeof(recBuffer) - dataBytesReceived)){
-                  break;
-                }
+							}else{ //Zeile nach Newline in Puffer speichern.
+								dataBytesReceived += sizeof(recBuffer) - cA;
+                strncpy(receiveBuffer, recBuffer, (sizeof(recBuffer)-cA-1));
 							}
 							commandAction = 1;
-					}else{//Falls Datei grösser als 1024 Bytes
+					}else{
 						dataBytesReceived += recvMsgSize;
-            printf("Data Bytes received %i dbr: %i \n", recvMsgSize,dataBytesReceived);
-						//strncpy(receiveBuffer+strlen(receiveBuffer), recBuffer,sizeof(recBuffer));
+            strncpy(receiveBuffer+strlen(receiveBuffer)+1, recBuffer,sizeof(recBuffer));
             //Falls die Dateigrösse den empfangenen Bytes entspricht ist der Job erledigt.
-            printf("%i %i\n", atoi(fileSize), dataBytesReceived);
-            break;
-						if (atoi(fileSize) == dataBytesReceived){
+						if(atoi(fileSize) == (dataBytesReceived - RCVBUFFSIZE) - 1){
 							break;
 						}
 					}
 					memset(recBuffer, 0, sizeof(recBuffer));
 				}
-        
 				//do job client requested
-				if (!strncmp(command, "list", 4)){
+				if (!strncmp(command, "list", 4)){          
 					//listFiles(client_socket);
 				}else if(!strncmp(command, "create", 6)){
           createFile(client_socket, receiveBuffer, fileName, fileSize);
@@ -221,9 +211,29 @@ void listFiles(int socket){
 //Dateien in Shared Memory abspeichern und an Dynamische Liste anketten.
 void createFile(int socket, char *content, char *fileName, char *fileSize){
   unsigned int fileSizeInt = atoi(fileSize);
-  for(int i = 0; i < fileSizeInt; i++){
-    printf("content:\n %c\n", content[i]);
-  }
+  //Shared Memory Segment und Semaphore anfordern, FileInfo verlinken.
+	int fileExists = 0;
+  //sem_t sem = NULL;
+  int semId = 0;
+  int shMemoryId = 0;
+  char fN[5] = "File";
+  
+	//void append(int semId, unsigned int fileSizeInt, char fN, int shMemoryId);
+  
+  printf("After append: %i%i%i%s%i\n", semId, shMemoryId, fileSizeInt, fN, fileInfoBegin->fileSize);
+  
+	// Antwort an Client 
+	if (fileExists == 1){
+		char result[14];
+		result[13] = '\0';
+		snprintf(result, 13, "%s", "FILE EXISTS\n");
+		send(socket, result, 13, 0);
+	}else{
+		char result[15];
+		result[14] = '\0';
+		snprintf(result, 14, "%s", "FILE CREATED\n");
+		send(socket, result, 14, 0);
+	}
   
 }
 //Datei an Client senden.
@@ -237,6 +247,84 @@ void updateFile(int socket, char *fileName, char *newFileName, char *fileSize, c
 //Datei löschen.
 void deleteFile(int socket, char *fileName){
   
+}
+
+//Initialisierung der FileInfo Liste
+void start(void) {
+   fileInfoBegin = fileInfoEnd = NULL;
+}
+
+//Anhängen von weiteren FileInfo Structs
+void append(int semId, unsigned int fSize, char fName, int shMemoryId) {
+  printf("appending1");
+   /* Zeiger zum Zugriff auf die einzelnen Elemente
+    * der Struktur */
+   struct FileInfo *zeiger, *zeiger1;
+
+   /* Wurde schon Speicher für den ende-Zeiger bereitgestellt? */
+   if(fileInfoEnd == NULL) {
+      if((fileInfoEnd=malloc(sizeof(struct FileInfo))) == NULL) {
+         printf("Konnte keinen Speicherplatz für ende "
+                "reservieren\n");
+         return;
+      }
+   }
+
+   /* Wir fragen ab, ob es schon ein Element in der Liste gibt.
+    * Wir suchen das Element, auf das unser Zeiger *anfang
+    * zeigt. Falls *anfang immer noch auf NULL zeigt, bekommt
+    * *anfang die Adresse unseres 1. Elements und ist somit der
+    * Kopf (Anfang) unserer Liste. */
+   if(fileInfoBegin == NULL) {
+      /* Wir reservieren Speicherplatz für unsere
+       * Struktur für das erste Element der Liste. */
+      if((fileInfoBegin = malloc(sizeof(struct FileInfo))) == NULL) {
+         handleErrors(-1 ,"No more space in memory");
+         return;
+      }
+      
+      //Die Informationen zur DateiStruktur werden hier gesetzt.
+      //fileInfoBegin->semaphore = sem;
+      fileInfoBegin->semaphoreId = semId;
+      fileInfoBegin->fileSize = fSize;
+      fileInfoBegin->fileName = fName;
+      fileInfoBegin->sharedMemoryId = shMemoryId;
+      
+      //Zeiger auf die Korrekten Structs setzen.
+      fileInfoBegin = fileInfoEnd;
+      fileInfoEnd->prevFile=NULL;
+   }else {
+      zeiger = fileInfoBegin;    /* Wir zeigen auf das 1. Element. */
+      while(zeiger->nextFile != NULL)
+         zeiger = zeiger->nextFile;
+      /* Wir reservieren einen Speicherplatz für das letzte
+       * Element der Liste und hängen es an. */
+      if((zeiger->nextFile = malloc(sizeof(struct FileInfo))) == NULL) {
+         handleErrors(-1, "No more space in memory");
+         return;
+      }
+      
+      zeiger1 = zeiger; //zeiger1 ist die aktuell letzte Struktur
+
+      zeiger=zeiger->nextFile; /* zeiger auf neuen Speicherplatz */
+      //strcpy(zeiger->name,strtok(n, "\n"));
+      zeiger->fileSize = fSize;
+      zeiger->nextFile = NULL;
+      
+      //Zeiger auf die Korrekten Structs setzen
+      fileInfoEnd = zeiger;
+      zeiger->prevFile = zeiger1;
+      zeiger1->nextFile = zeiger;
+    }
+}
+
+int getShmId(){
+	/*shmId = (int *) shmat(shmIdPointer, NULL, 0);
+	int varShmId = *shmId;
+	res = shmdt(shmId);
+	handleErrors(res, "Shared Memory Segment not attached!");
+	return storshmid;*/
+  return 0;
 }
 
 void doProcessing(int sock){

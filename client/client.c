@@ -57,7 +57,6 @@ int clientCommandParser(int argc, char **argv){
    }else if(argc > 1){
       if (!strcmp(argv[1], "LIST") || !strcmp(argv[1], "list")){
           return 1;
-          printf("List command set");
           
           
       }else if(!strcmp(argv[1], "CREATE") || !strcmp(argv[1], "create")){
@@ -65,17 +64,17 @@ int clientCommandParser(int argc, char **argv){
           return 2;
           
       }else if(!strcmp(argv[1], "READ") || !strcmp(argv[1], "read")){
-          printf("R command set");
+          
           return 3;
           
           
       }else if(!strcmp(argv[1], "UPDATE") || !strcmp(argv[1], "update")){
-          printf("U command set");
+          
           return 4;
           
           
       }else if(!strcmp(argv[1], "DELETE") || !strcmp(argv[1], "delete")){
-          printf("D command set");
+          
           return 5;
           
           
@@ -108,11 +107,12 @@ int initClientConnection(){
 }
 
 void fileList(int socket){
-	char *action = malloc(sizeof(char) * 6);
-	action[5] = '\0';
-        snprintf(action, 5, "%s", "list\n");
-        send(socket, action, 5, 0);
-	free(action);
+	int msgsize = 7;
+  char *command = malloc(sizeof(char) * msgsize);
+  snprintf(command, msgsize, "%s \n", "list");
+	send(socket, command, msgsize-1, 0);
+  
+	free(command);
 }
 
 //Sendet eine Datei an den Socket
@@ -129,9 +129,9 @@ void fileCreate(int socket, char *filename){
   fstat(fd, &buf);
   unsigned int size = buf.st_size;
   
-  int msgsize = size + 7 + 5;
+  int msgsize = size + sizeof(filename) + 7 + 5; //Dateigrösse, create, abstände
   char *command = malloc(sizeof(char) * size);
-  snprintf(command, msgsize, "%s %s %s %u %s", "create", filename, " ", size, "\n");
+  snprintf(command, msgsize, "%s %s %s %u \n", "create", filename, " ", size);
 	send(socket, command, msgsize-1, 0);
   
 	free(command);
