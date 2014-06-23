@@ -129,7 +129,7 @@ void fileCreate(int socket, char *filename){
   fstat(fd, &buf);
   unsigned int size = buf.st_size;
   
-  int msgsize = size + sizeof(filename) + 7 + 6; //Dateigrösse, create, abstände
+  int msgsize = size + sizeof(filename) + 7 + 6; //Dateigrösse, Dateiname, create, abstände
   printf("%i", msgsize);
   char *command = malloc(sizeof(char) * msgsize);
   snprintf(command, msgsize, "%s %s %u %s %s", "create", filename, size, " ", "\n");

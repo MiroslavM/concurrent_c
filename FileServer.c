@@ -106,17 +106,19 @@ int main(int argc, char* argv[]){
 				//Das empfangene Kommando des Clients überprüfen.
 				int commandAction = 0;
 				while(TRUE){
+          char comBuffer[390];
 					char recBuffer[RCVBUFFSIZE];
 					int recvMsgSize = recv(client_socket, recBuffer, RCVBUFFSIZE, MSG_DONTWAIT);
             handleErrors(recvMsgSize, "No message received");
 					if (commandAction == 0){
 								for (cA = 0; cA < RCVBUFFSIZE; cA++){
+                  comBuffer[cA] = recBuffer[cA];
                   if (recBuffer[cA] == '\n'){
                     cA++;
                     break;
                   }
                 }
-              printf("%s", recBuffer);
+              printf("Command Buffer: %s", comBuffer);
 							//Empfangene Zeile splitten.
 							char separator[]   = " \n";
 							char *token;
@@ -124,7 +126,7 @@ int main(int argc, char* argv[]){
 							char *opt1 = "";
 							char *opt2 = "";
               char *opt3 = "";
-							token = strtok( recBuffer, separator );
+							token = strtok(comBuffer,separator);
 							int counter = 0;
 							while( token != NULL ){
 								if (counter == 0){
@@ -139,6 +141,7 @@ int main(int argc, char* argv[]){
 								token = strtok( NULL, separator );
 								counter++;
 							}
+              
 							snprintf(command, sizeof(com), "%s", com);
 							if (!strncmp(command, "list", 4)){
                 
@@ -252,10 +255,6 @@ void updateFile(int socket, char *fileName, char *newFileName, char *fileSize, c
    * */
 }
 
-//Datei Löschen
-void deleteFile(int socket, char *fileName){
-  
-}
 
 /*
  * Funktionen, welche die Rückgabewerte an die Clients senden.
