@@ -108,8 +108,8 @@ int initClientConnection(){
 
 void fileList(int socket){
 	int msgsize = 7;
-  char *command = malloc(sizeof(char) * msgsize);
-  snprintf(command, msgsize, "%s \n", "list");
+    char *command = malloc(sizeof(char) * msgsize);
+    snprintf(command, msgsize, "%s \n", "list");
 	send(socket, command, msgsize-1, 0);
   
 	free(command);
@@ -119,39 +119,39 @@ void fileList(int socket){
 void fileCreate(int socket, char *filename){  
   //int checkFilename(char *filename);
   FILE *filePointer;
-	filePointer = fopen(filename, "r");
-	if (filePointer == NULL){
-		handleErrors(-1, "File couldn't been opened!");
-	}
+  filePointer = fopen(filename, "r");
+  if (filePointer == NULL){
+	handleErrors(-1, "File couldn't been opened!");
+  }
   //Dateigrösse ermitteln
   int fd = fileno(filePointer);
   struct stat buf;
   fstat(fd, &buf);
   unsigned int size = buf.st_size;
   
-  int msgsize = size + sizeof(filename) + 7 + 6; //Dateigrösse, Dateiname, create, abstände
-  printf("%i", msgsize);
+  int msgsize = size + sizeof(filename) + 7 + 4; //Dateigrösse, Dateiname, create, abstände
   char *command = malloc(sizeof(char) * msgsize);
-  snprintf(command, msgsize, "%s %s %u %s %s", "create", filename, size, " ", "\n");
+  snprintf(command, msgsize, "%s/%s/%u/", "create", filename, size);
 	send(socket, command, msgsize - 1, 0);
+	printf("\tMessage size %i \n", msgsize-1);
   
 	free(command);
   
 	unsigned int bytesSent = 0;
   
   int offset = 0;
-	char file[RCVBUFFSIZE];
+  char file[RCVBUFFSIZE];
   size_t data = 0;
   size_t sent = 0;
 
 	//Lese die Datei aus und Sende die ausgelesenen Bytes [BUFFERSIZE]
 	while ( (data = fread(file, sizeof(char), RCVBUFFSIZE, filePointer)) > 0){
 		while ((sent = send(socket, file + offset, data + 1024, 0)) > 0) {
-      handleErrors(sent, "Create doesn't send file");
+			handleErrors(sent, "Create doesn't send file");
 			bytesSent += sent;
-      offset += sent;
-      data -= sent;
-		}		
+			offset += sent;
+			data -= sent;
+		}
 	}
   close(socket);
   fclose(filePointer);

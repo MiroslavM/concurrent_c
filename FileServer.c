@@ -63,7 +63,7 @@ int main(int argc, char* argv[]){
   
   //Oeffne TCP Socket
   server_socket = initServer();
-    handleErrors(server_socket, "Server Socket not opened\n");
+  handleErrors(server_socket, "Server Socket not opened\n");
     
   //unsigned int bytesReceived;
   
@@ -79,117 +79,143 @@ int main(int argc, char* argv[]){
 				handleErrors(-1, "Couldn't start new Client-Process");
 			}else if(pid == 0){				 
 				handleErrors(1, "Client connected");
-        //Reagiere auf ankommende Befehle, case switches (list, create, read, update, delete)
+				
+				//Reagiere auf ankommende Befehle, case switches (list, create, read, update, delete)
 				int dataBytesReceived = 0;
-        int cA = 0;
+				int cA = 0;
         
 				//Speichert die empfangenen optionen:list,create,read,update or delete
 				char command[64]; 
-            command[63] = '\0';
-            memset(command, 0, sizeof(command));
+					 command[63] = '\0';
+					 memset(command, 0, sizeof(command));
 				//Speichert den empfangenen Dateinamen
 				char fileName[256];
-            fileName[255] = '\0';
-            memset(fileName, 0, sizeof(fileName));
+					 fileName[255] = '\0';
+					 memset(fileName, 0, sizeof(fileName));
 				//Speichert die Grösse der Datei
 				char fileSize[64];
-            fileSize[63] = '\0';
-            memset(fileSize, 0, sizeof(fileSize));
+					 fileSize[63] = '\0';
+					 memset(fileSize, 0, sizeof(fileSize));
         
 				//Datei zwischenspeichern, bevor sie in Shared Memory abgelegt wird. (Der Client muss nicht warten)
 				char *receiveBuffer = (char *) malloc(sizeof(char) * RCVBUFFSIZE);
 				if (receiveBuffer == NULL){
 					handleErrors(-1, "Memory allocation failed!");
-          return -1;
+					return -1;
 				}
         
 				//Das empfangene Kommando des Clients überprüfen.
 				int commandAction = 0;
+				int fileSizeInt = 0;
+				int recvMsgSize = 0;
+				
 				while(TRUE){
-          char comBuffer[390];
+					char comBuffer[390];
 					char recBuffer[RCVBUFFSIZE];
-					int recvMsgSize = recv(client_socket, recBuffer, RCVBUFFSIZE, MSG_DONTWAIT);
-            handleErrors(recvMsgSize, "No message received");
+					recvMsgSize = recv(client_socket, recBuffer, RCVBUFFSIZE, 0);
+					handleErrors(recvMsgSize, "No message received");
+					
 					if (commandAction == 0){
-								for (cA = 0; cA < RCVBUFFSIZE; cA++){
-                  comBuffer[cA] = recBuffer[cA];
-                  if (recBuffer[cA] == '\n'){
-                    cA++;
-                    break;
-                  }
-                }
-              printf("Command Buffer: %s", comBuffer);
+						
+							for (cA = 0; cA < RCVBUFFSIZE; cA++){
+								comBuffer[cA] = recBuffer[cA]; //Speichern die Befehlszeile in comBuffer
+								if (recBuffer[cA] == '\n'){
+									cA++;
+									break;
+								}
+							}
+							
+							printf("%i \n", cA);
+							
 							//Empfangene Zeile splitten.
-							char separator[]   = " \n";
-							char *token;
+							char separator[]   = "/ \n";
 							char *com = "";
 							char *opt1 = "";
 							char *opt2 = "";
-              char *opt3 = "";
-							token = strtok(comBuffer,separator);
-							int counter = 0;
+							char *opt3 = "";
+							char *saveptr = "";
+							
+							com = strtok_r(comBuffer, separator, &saveptr);
+							opt1 = strtok_r(NULL, separator, &saveptr);
+							opt2 = strtok_r(NULL, separator, &saveptr);
+							opt3 = strtok_r(NULL, separator, &saveptr);
+							/*
 							while( token != NULL ){
 								if (counter == 0){
-									com = token;   
+									com = token;
+									printf("%s %u", com, comSize);
 								}else if(counter == 1){
 									opt1 = token;
 								}else if(counter == 2){
 									opt2 = token;
 								}else if(counter == 3){
-                  opt3 = token;
-                }
-								token = strtok( NULL, separator );
+								    opt3 = token;
+								    break;
+								}
+								token = strtok_r( NULL, separator, &saveptr );
 								counter++;
-							}
-              
-							snprintf(command, sizeof(com), "%s", com);
+							}*/
+							
+							snprintf(command, sizeof(com), "%s", com);								
 							if (!strncmp(command, "list", 4)){
-                
-                break;
+								printf("%s", command);
 							}else if(!strncmp(command, "create", 6)){
 								snprintf(fileName, sizeof(fileName), "%s", opt1);
 								snprintf(fileSize, sizeof(fileSize), "%s", opt2);
-                unsigned int fileSizeInt = atoi(fileSize);
-                //Zwischenspeicher, bevor die Datei in Shared Memory abgelegt wird. (Der Client muss nicht warten)
-                char *receiveBuffer = (char *) malloc(sizeof(char) * fileSizeInt);
-                if (receiveBuffer == NULL){
-                  handleErrors(-1, "Memory allocation failed!");
-                }
+								fileSizeInt = atoi(fileSize);
+								
+								char *receiveBuffer = (char *) malloc((sizeof(char) * fileSizeInt)+1);
+								if (receiveBuffer == NULL){
+								  handleErrors(-1, "Memory allocation failed!");
+								}
+																
 							}else if(!strncmp(command, "read", 4)){
 								snprintf(fileName, sizeof(fileName), "%s", opt1);
-                break;
+								break;
+								
 							}else if(!strncmp(command, "update", 6)){
 								snprintf(fileName, sizeof(fileName), "%s", opt1);
 								snprintf(fileSize, sizeof(fileSize), "%s", opt3);
 								break;
+								
 							}else if(!strncmp(command, "delete", 6)){
 								snprintf(fileName, sizeof(fileName), "%s", opt1);
-                break;
+								break;
 							}
+							
 							// Falls keine Daten angekommen sind...
 							if (recvMsgSize == cA){
-                printf("No data\n");
+								handleErrors(-1, "No data\n");
 							}else{ //Zeile nach Newline in Puffer speichern.
 								dataBytesReceived += sizeof(recBuffer) - cA;
-                strncpy(receiveBuffer, recBuffer, (sizeof(recBuffer)-cA-1));
+								strncpy(receiveBuffer, recBuffer, (sizeof(recBuffer)-cA));
+								printf("%i %u \n", fileSizeInt, (RCVBUFFSIZE - dataBytesReceived));
+								if (fileSizeInt == dataBytesReceived - cA){
+									break;
+								}
 							}
+							break;
 							commandAction = 1;
+							
+							
 					}else{
 						dataBytesReceived += recvMsgSize;
-            strncpy(receiveBuffer+strlen(receiveBuffer)+1, recBuffer,sizeof(recBuffer));
-            //Falls die Dateigrösse den empfangenen Bytes entspricht ist der Job erledigt.
-						if(atoi(fileSize) == (dataBytesReceived - RCVBUFFSIZE) - 1){
+						strncpy(receiveBuffer+strlen(receiveBuffer)+1, recBuffer,sizeof(recBuffer));
+						printf("%i \n", dataBytesReceived);
+						
+						//Falls die Dateigrösse den empfangenen Bytes entspricht ist der Job erledigt.
+						if(fileSizeInt == (dataBytesReceived)){
 							break;
 						}
 					}
-					memset(recBuffer, 0, sizeof(recBuffer));
+						memset(recBuffer, 0, sizeof(recBuffer));
 				}
-				//do job client requested
+				//Zum Kommando gehörende Funktion aufrufen
 				if (!strncmp(command, "list", 4)){          
 					//listFiles(client_socket);
 				}else if(!strncmp(command, "create", 6)){
-          printf("create");
-          createFile(client_socket, receiveBuffer, fileName, fileSize);
+					printf("create");
+					createFile(client_socket, receiveBuffer, fileName, fileSize);
 				}else if(!strncmp(command, "read", 4)){
 					//readFile(client_socket, fileName);
 				}else if(!strncmp(command, "update", 6)){
@@ -200,10 +226,7 @@ int main(int argc, char* argv[]){
 				free(receiveBuffer);
 				exit(0);
 			}
-  }
-  
-  
-  
+  }  
   return (0);
 }
 
@@ -216,6 +239,7 @@ void listFiles(int socket){
 }
 //Dateien in Shared Memory abspeichern und an Dynamische Liste anketten.
 void createFile(int socket, char *content, char *fileName, char *fileSize){
+	/*
   unsigned int fileSizeInt = atoi(fileSize);
   //Shared Memory Segment und Semaphore anfordern, FileInfo verlinken.
 	int fileExists = 0;
@@ -241,7 +265,7 @@ void createFile(int socket, char *content, char *fileName, char *fileSize){
 		snprintf(result, 14, "%s", "FILE CREATED\n");
 		send(socket, result, 14, 0);
 	}
-  
+  */
 }
 //Datei an Client senden.
 void readFile(int socket, char* fileName){
