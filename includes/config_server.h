@@ -16,7 +16,7 @@ void handleErrors(int number, const char *message);
 
 //Manipulation der Dateien
 void listFiles(int socket);
-void createFile(int socket, char *content, char *fileName, char *fileSize);
+int createFile(int socket, char *content, char *fileName, int fileSizeInt);
 void readFile(int socket, char *fileName);
 void updateFile(int socket, char *fileName, char *newFileName, char *fileSize, char* content);
 void deleteFile(int socket, char *fileName);
@@ -30,7 +30,7 @@ void sendDeleteFileResult(int socket);
 //Manipulation von Speicher
 int getShmId();
 void start();
-void append(int semaphoreId, unsigned int fileSize, char fileName, int sharedMemoryId);
+int appendFile(int semaphoreId, unsigned int fileSize, char *fileName, int sharedMemoryId, int *check);
 void detach(char *fileName);
 
 //Initialisierung des Daemons
@@ -42,13 +42,14 @@ int checkProcessState();
 int initServer();
 void signalHandler();
 void doProcessing(int socket);
+int receiveBasic(int socket);
 
 //FileInfo Struktur
 struct FileInfo {
   sem_t semaphore;
   int semaphoreId;
   unsigned int fileSize;
-  char fileName;
+  char *fileName;
   int sharedMemoryId;
   struct FileInfo *prevFile;
   struct FileInfo *nextFile;

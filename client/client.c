@@ -127,13 +127,13 @@ void fileCreate(int socket, char *filename){
   int fd = fileno(filePointer);
   struct stat buf;
   fstat(fd, &buf);
-  unsigned int size = buf.st_size;
+  unsigned int fileSize = buf.st_size;
   
-  int msgsize = size + sizeof(filename) + 7 + 4; //Dateigrösse, Dateiname, create, abstände
+  int msgsize = fileSize + sizeof(filename) + 6 + 4; //Dateigrösse, Dateiname, create, abstände
   char *command = malloc(sizeof(char) * msgsize);
-  snprintf(command, msgsize, "%s/%s/%u/", "create", filename, size);
+  snprintf(command, msgsize, "%s %s %u %u \n", "create", filename, fileSize, msgsize);
 	send(socket, command, msgsize - 1, 0);
-	printf("\tMessage size %i \n", msgsize-1);
+	printf("\tMessage size %i \n", msgsize);
   
 	free(command);
   
@@ -153,6 +153,7 @@ void fileCreate(int socket, char *filename){
 			data -= sent;
 		}
 	}
+  getCreateResult(socket);
   close(socket);
   fclose(filePointer);
 }
@@ -195,7 +196,18 @@ void getListResult(int socket){
 }
 
 void getCreateResult(int Socket){
-  
+  while(TRUE){
+    printf("empfang: \n");
+		int received = recv(Socket, receiveBuffer, RCVBUFFSIZE-1, 0); //Empfängt die Daten im Non-Blocking Modus
+		if (received < 0 && errno == EAGAIN) {
+			//Keine Daten oder Socket nicht lesbar...
+      handleErrors(received, "Socket not readable\n");
+			continue;
+		}
+    printf("%s\n", receiveBuffer);
+    break;
+		}
+    close(Socket);
 }
 void getReadResult(int Socket){
   
