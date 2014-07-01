@@ -29,6 +29,7 @@ int main(int argc, char* argv[]){
     break;
     case 1:
       fileList(socket);
+      break;
     break;
     case 2:
       fileCreate(socket, localFileName);

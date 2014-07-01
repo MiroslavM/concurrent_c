@@ -143,26 +143,10 @@ int main(int argc, char* argv[]){
               opt1 = strtok_r(NULL, separator, &saveptr);
               opt2 = strtok_r(NULL, separator, &saveptr);
               opt3 = strtok_r(NULL, separator, &saveptr);
-              /*
-              while( token != NULL ){
-                if (counter == 0){
-                  com = token;
-                  printf("%s %u", com, comSize);
-                }else if(counter == 1){
-                  opt1 = token;
-                }else if(counter == 2){
-                  opt2 = token;
-                }else if(counter == 3){
-                    opt3 = token;
-                    break;
-                }
-                token = strtok_r( NULL, separator, &saveptr );
-                counter++;
-              }*/
-              
+                            
               snprintf(command, sizeof(com), "%s", com);								
               if (!strncmp(command, "list", 4)){
-                printf("%s", command);
+                break;
               }else if(!strncmp(command, "create", 6)){
                 snprintf(fileName, sizeof(fileName), "%s", opt1);
                 snprintf(fileSize, sizeof(fileSize), "%s", opt2);
@@ -210,7 +194,7 @@ int main(int argc, char* argv[]){
             printf("%i %i\n", dataBytesReceived, totalSize);
             
             //Falls die Dateigrösse den empfangenen Bytes entspricht ist der Job erledigt.
-            if(msgSize == (dataBytesReceived)){
+            if(msgSize < dataBytesReceived){
               printf("Received Data chunks complete\n");
               break;
             }
@@ -219,9 +203,8 @@ int main(int argc, char* argv[]){
 				}
 				//Zum Kommando gehörende Funktion aufrufen
 				if (!strncmp(command, "list", 4)){          
-					//listFiles(client_socket);
+					listFiles(client_socket);
 				}else if(!strncmp(command, "create", 6)){
-					printf("Rec Filename %s\n", fileName);
 					createFile(client_socket, receiveBuffer, fileName, fileSizeInt);
 				}else if(!strncmp(command, "read", 4)){
 					//readFile(client_socket, fileName);
@@ -241,9 +224,13 @@ int main(int argc, char* argv[]){
 
 //Dateiliste an Client senden.
 void listFiles(int socket){
-  //Solange FileInfo Structs existieren die Dateinamen und Grössen in buffer speichern
-  while(fileInfoBegin->nextFile){
-    printf("none");
+	printf("Listing %s \n", fileInfoBegin->fileName);
+  if(fileInfoBegin != NULL){
+	  printf("fileInfoBegin is not NULL:\n");
+	  //Solange FileInfo Structs existieren die Dateinamen und Grössen in buffer speichern
+	  while(fileInfoBegin->nextFile != NULL){
+		printf("%s\n", fileInfoBegin->fileName);
+	  }
   }
 }
 //Dateien in Shared Memory abspeichern und an Dynamische Liste anketten.
