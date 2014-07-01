@@ -221,6 +221,7 @@ int main(int argc, char* argv[]){
 				if (!strncmp(command, "list", 4)){          
 					//listFiles(client_socket);
 				}else if(!strncmp(command, "create", 6)){
+					printf("Rec Filename %s\n", fileName);
 					createFile(client_socket, receiveBuffer, fileName, fileSizeInt);
 				}else if(!strncmp(command, "read", 4)){
 					//readFile(client_socket, fileName);
@@ -247,19 +248,19 @@ void listFiles(int socket){
 }
 //Dateien in Shared Memory abspeichern und an Dynamische Liste anketten.
 int createFile(int socket, char *content, char *fileName, int fileSizeInt){
-	printf("%s", content);
+  printf("%s", content);
   //Shared Memory Segment und Semaphore anfordern, FileInfo verlinken.
-	int fileExists = 0;
+  int fileExists = 0;
   int check = 0;
-  int retu;
+  int retu = 0;
   //sem_t sem = NULL;
   int semId = 0;
   int shMemoryId = 0;
   
   //Hinzufügen von Dateien soll exclusiv erfolgen. http://openbook.galileocomputing.de/unix_guru/node394.html
-	retu = appendFile(semId, fileSizeInt, fileName, shMemoryId, &check);
+  appendFile(semId, fileSizeInt, fileName, shMemoryId, &check);
   
-  printf("After append: %i %i %i %i %i %s %i \n", semId, shMemoryId, fileSizeInt, retu, check, (*fileInfoBegin).fileName, (*fileInfoBegin).fileSize);
+  printf("After append: semId %i shMemId %i fileSize %i retu %i check %i fileName %s fileSize%i \n", semId, shMemoryId, fileSizeInt, retu, check, fileInfoBegin->fileName, (*fileInfoBegin).fileSize);
   
 	// Antwort an Client 
 	if (fileExists == 1){
@@ -313,7 +314,7 @@ void start(void) {
 }
 
 //Anhängen von weiteren FileInfo Structs
-int appendFile(int semId, unsigned int fSize, char *fName, int shMemoryId, int *check) {
+void appendFile(int semId, unsigned int fSize, char *fName, int shMemoryId, int *check) {
    /* Zeiger zum Zugriff auf die einzelnen Elemente
     * der Struktur */
    struct FileInfo *zeiger, *zeiger1;
@@ -324,7 +325,7 @@ int appendFile(int semId, unsigned int fSize, char *fName, int shMemoryId, int *
       if((fileInfoEnd=malloc(sizeof(struct FileInfo))) == NULL) {
          printf("Konnte keinen Speicherplatz für ende "
                 "reservieren\n");
-         return -1;
+         return;
       }
    }
   //check = 2;
@@ -340,20 +341,20 @@ int appendFile(int semId, unsigned int fSize, char *fName, int shMemoryId, int *
       if((fileInfoBegin = malloc(sizeof(struct FileInfo))) == NULL) {
          handleErrors(-1 ,"No more space in memory");
          *check = -15;
-         return -1;
+         return;
       }
       
       //Die Informationen zur DateiStruktur werden hier gesetzt.
       //fileInfoBegin->semaphore = sem;
       fileInfoBegin->semaphoreId = semId;
-      (*fileInfoBegin).fileSize = fSize;
-      (*fileInfoBegin).fileName = "Name";
+      fileInfoBegin->fileSize = fSize;
+      fileInfoBegin->fileName = fName;
       fileInfoBegin->sharedMemoryId = shMemoryId;
       
       //Zeiger auf die Korrekten Structs setzen. Erster Struct ist zugleich der Letzte.
-      fileInfoBegin = fileInfoEnd;
-      fileInfoEnd->prevFile=NULL;
-      *check = fSize;
+      fileInfoBegin->nextFile = NULL;
+      fileInfoEnd = fileInfoBegin;
+      fileInfoEnd->prevFile = NULL;
    }else {
      *check = 4;
       zeiger = fileInfoBegin;    /* Wir zeigen auf das 1. Element. */
@@ -363,7 +364,7 @@ int appendFile(int semId, unsigned int fSize, char *fName, int shMemoryId, int *
        * Element der Liste und hängen es an. */
       if((zeiger->nextFile = malloc(sizeof(struct FileInfo))) == NULL) {
          handleErrors(-1, "No more space in memory");
-         return -1;
+         return;
       }
       
       zeiger1 = zeiger; //zeiger1 ist die aktuell letzte Struktur
@@ -379,7 +380,7 @@ int appendFile(int semId, unsigned int fSize, char *fName, int shMemoryId, int *
       zeiger1->nextFile = zeiger;
       *check = 5;
     }
-    return 0;
+    return;
 }
 
 int getShmId(){

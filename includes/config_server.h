@@ -30,7 +30,8 @@ void sendDeleteFileResult(int socket);
 //Manipulation von Speicher
 int getShmId();
 void start();
-int appendFile(int semaphoreId, unsigned int fileSize, char *fileName, int sharedMemoryId, int *check);
+//int appendFile(int semaphoreId, unsigned int fileSize, char *fileName, int sharedMemoryId, int *check);
+void appendFile(int semaphoreId, unsigned int fileSize, char *fileName, int sharedMemoryId, int *check);
 void detach(char *fileName);
 
 //Initialisierung des Daemons
